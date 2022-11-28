@@ -1,0 +1,23 @@
+[
+  {
+    "route": "/swagger",
+    "auth": false,
+    "nodes": [
+      "http://swagger:3000"
+    ]
+  },
+  {
+    "route": "/api/login",
+    "auth": false,
+    "nodes": [
+      "http://authorization_service:3000"
+    ]
+  },
+  {
+    "route": "/api/v1/user",
+    "auth": true,
+    "nodes": [
+      "http://user_service:3000"
+    ]
+  }
+]

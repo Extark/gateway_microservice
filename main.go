@@ -1,13 +1,17 @@
 package main
 
 import (
+	"github.com/extark/gateway_microservice/models"
 	"github.com/extark/gateway_microservice/utils"
 	"github.com/extark/go_jwt_auth"
 	stargate "github.com/realbucksavage/stargate"
 	"github.com/realbucksavage/stargate/listers"
+	"github.com/samber/lo"
 	"log"
 	"net/http"
 )
+
+var confs []*models.ConfigJsonFormat
 
 func main() {
 	//Init the settings values inside a global var
@@ -17,12 +21,23 @@ func main() {
 		return
 	}
 
-	listeners := listers.Static{
-		Routes: map[string][]string{
-			"/": {},
-		},
+	//read the conf of the routes
+	confs, err = utils.ReadConf("config.json")
+	if err != nil {
+		log.Panicln(err.Error())
+		return
 	}
 
+	//creates the routes map
+	routes := make(map[string][]string)
+	for _, conf := range confs {
+		routes[conf.Route] = conf.Nodes
+	}
+
+	//instance the listers
+	listeners := listers.Static{Routes: routes}
+
+	//instances a jwtCasbinAuthMiddleware
 	gateway, err := stargate.NewRouter(listeners, stargate.WithMiddleware(jwtCasbinAuthMiddleware))
 	if err != nil {
 		log.Fatalln(err)
@@ -32,5 +47,21 @@ func main() {
 }
 
 func jwtCasbinAuthMiddleware(next http.Handler) http.Handler {
-	return go_jwt_auth.JwtCasbinAuthMiddleware(next, utils.Cfg.CASBINADAPTER, utils.Cfg.SECRET)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		obj := r.URL.Path
+		conf, ok := lo.Find[*models.ConfigJsonFormat](confs, func(i *models.ConfigJsonFormat) bool {
+			return i.Route == obj
+		})
+
+		if !ok {
+			log.Fatalln("ERROR: request not found")
+			return
+		}
+		if conf.Auth {
+			go_jwt_auth.JwtCasbinAuthMiddleware(next, utils.Cfg.CASBINADAPTER, utils.Cfg.SECRET).ServeHTTP(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
