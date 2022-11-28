@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/extark/gateway_microservice/models"
 	"github.com/extark/gateway_microservice/utils"
 	"github.com/extark/go_jwt_auth"
@@ -54,7 +55,10 @@ func jwtCasbinAuthMiddleware(next http.Handler) http.Handler {
 		})
 
 		if !ok {
-			log.Fatalln("ERROR: request not found")
+			log.Print("ERROR: request not found")
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(models.StandardError{Error: "request not found"})
 			return
 		}
 		if conf.Auth {

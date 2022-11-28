@@ -3,7 +3,7 @@
     "route": "/swagger",
     "auth": false,
     "nodes": [
-      "http://swagger:3000"
+      "http://swagger:3000/swagger/index.html"
     ]
   },
   {
