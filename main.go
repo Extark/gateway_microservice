@@ -62,7 +62,7 @@ func jwtCasbinAuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 		if conf.Auth {
-			go_jwt_auth.JwtCasbinAuthMiddleware(next, utils.Cfg.CASBINADAPTER, utils.Cfg.SECRET).ServeHTTP(w, r)
+			go_jwt_auth.JwtCasbinAuthMiddleware(next, utils.Cfg.CASBINADAPTER, utils.Cfg.SECRET)
 			return
 		}
 
